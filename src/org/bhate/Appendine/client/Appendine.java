@@ -11,6 +11,9 @@ import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.KeyCodes;
 import com.google.gwt.event.dom.client.KeyUpEvent;
 import com.google.gwt.event.dom.client.KeyUpHandler;
+import com.google.gwt.event.logical.shared.ValueChangeEvent;
+import com.google.gwt.event.logical.shared.ValueChangeHandler;
+import com.google.gwt.user.client.History;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.FlexTable;
@@ -98,12 +101,13 @@ public class Appendine implements EntryPoint {
 		RootPanel.get("resultContainer").add(baseVPanel);
 
 		// Create a handler for the sendButton and nameField
-		class MyHandler implements ClickHandler, KeyUpHandler {
+		class MyHandler implements ClickHandler, KeyUpHandler,
+				ValueChangeHandler<String> {
 			/**
 			 * Fired when the user clicks on the sendButton.
 			 */
 			public void onClick(ClickEvent event) {
-				sendNameToServer();
+				History.newItem(nameField.getText());
 			}
 
 			/**
@@ -116,7 +120,7 @@ public class Appendine implements EntryPoint {
 							&& event.isShiftKeyDown())
 						sendPrefixToServer();
 					else
-						sendNameToServer();
+						History.newItem(nameField.getText());
 					break;
 				}
 			}
@@ -166,11 +170,11 @@ public class Appendine implements EntryPoint {
 			/**
 			 * Send the name from the nameField to the server and wait for a
 			 * response.
+			 * @param textToServer 
 			 */
-			private void sendNameToServer() {
+			private void sendNameToServer(String textToServer) {
 				// First, we validate the input.
 				errorLabel.setText("");
-				String textToServer = nameField.getText();
 				if (!FieldVerifier.isValidName(textToServer)) {
 					errorLabel
 							.setText("need a valid name with least four characters in it [ Hint: name is (a-zA-Z) but not too big too ]");
@@ -209,11 +213,24 @@ public class Appendine implements EntryPoint {
 				});
 
 			}
+
+			@Override
+			public void onValueChange(ValueChangeEvent<String> event) {
+				String value = event.getValue();
+				if(value==null || value.equals(""))
+					return;
+				nameField.setText(value);
+				sendNameToServer(value);
+			}
 		}
 
 		// Add a handler to send the name to the server
 		MyHandler handler = new MyHandler();
 		sendButton.addClickHandler(handler);
 		nameField.addKeyUpHandler(handler);
+
+		History.addValueChangeHandler(handler);
+		History.fireCurrentHistoryState();
 	}
+
 }
